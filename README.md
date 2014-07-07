@@ -1,7 +1,7 @@
 check_switchking
 ================
 
-Plugin for op5 Monitor/Naemon/nagios to query the REST API in Switch King
+Plugin for op5 Monitor/Naemon/nagios to query the REST API in Switch King, http://www.switchking.se
 
 Usage: check_switchking.py [options]
 
