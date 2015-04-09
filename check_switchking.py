@@ -1,10 +1,12 @@
 #!/usr/bin/python
+# coding=utf-8
 
 ##################################################################
 # (c) by Ola Sandström, https://github.com/zyberpunker
 #
 # 
 # 0.1 | Firt edition
+# 0.2 | Modified by Mattias Bergsten to handle Switch King on Mono on Linux
 #
 ##################################################################
 import urllib2
@@ -12,10 +14,30 @@ from xml.dom.minidom import parseString
 import pynagios 
 from pynagios import Plugin, make_option
 import sys
+import base64
 
-username = ""
-password = ""
+class PreemptiveBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+    '''Preemptive basic auth.
 
+    Instead of waiting for a 401 to then retry with the credentials,
+    send the credentials if the url is handled by the password manager.
+    Note: please use realm=None when calling add_password.'''
+    def http_request(self, req):
+        url = req.get_full_url()
+        realm = None
+        # this is very similar to the code from retry_http_basic_auth()
+        # but returns a request object.
+        user, pw = self.passwd.find_user_password(realm, url)
+        if pw:
+	    raw = "%s:%s" % (user, pw)
+            auth = 'Basic %s' % base64.b64encode(raw).strip()
+            req.add_unredirected_header(self.auth_header, auth)
+        return req
+
+    https_request = http_request
+
+username = "user"
+password = "pass"
 
 class switchking(Plugin):
 	apiid = make_option("-i","--id", dest="apiid", type="int")
@@ -34,11 +56,12 @@ class switchking(Plugin):
 		apiid = self.options.apiid
 
 		# Authentication
-		auth_handler = urllib2.HTTPBasicAuthHandler()
-		auth_handler.add_password(realm='',
-							  uri="http://%s:8800/datasources/%s" % (hostname, apiid),
-							  user="%s" % username,
-							  passwd="%s" % password)
+		auth_handler = PreemptiveBasicAuthHandler()
+		auth_handler.add_password(
+			realm=None,
+			uri="http://%s:8800/datasources/%s" % (hostname, apiid),
+			user="%s" % username,
+			passwd="%s" % password)
 		opener = urllib2.build_opener(auth_handler)
 		# install auth to use with urlopen
 
@@ -78,11 +101,12 @@ class switchking(Plugin):
 		apiid = self.options.apiid
 
 		# Authentication
-		auth_handler = urllib2.HTTPBasicAuthHandler()
-		auth_handler.add_password(realm='',
-							  uri="http://%s:8800/devices/%s" % (hostname, apiid),
-							  user="%s" % username,
-							  passwd="%s" % password)
+		auth_handler = PreemptiveBasicAuthHandler()
+		auth_handler.add_password(
+			realm=None,
+			uri="http://%s:8800/devices/%s" % (hostname, apiid),
+			user="%s" % username,
+			passwd="%s" % password)
 		opener = urllib2.build_opener(auth_handler)
 		# install auth to use with urlopen
 
