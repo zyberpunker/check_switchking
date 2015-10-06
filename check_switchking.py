@@ -5,8 +5,9 @@
 # (c) by Ola Sandström, https://github.com/zyberpunker
 #
 # 
-# 0.1 | Firt edition
+# 0.1 | First edition
 # 0.2 | Modified by Mattias Bergsten to handle Switch King on Mono on Linux
+# 0.3 | Now prints nice help text if you do something wrong
 #
 ##################################################################
 import urllib2
@@ -45,7 +46,14 @@ class switchking(Plugin):
 	devicetype = make_option("-d","--device", dest="device", type="int", help="1=datasource (default), 2=device")
 
 	def check(self):
-		if self.options.devicetype == 2:
+		# pynagios uses optparse. optparse doesn't have required arguments. blah.
+		if self.options.apiid == None:
+			self._option_parser.print_help()
+			sys.exit(2)
+		elif self.options.unit == None:
+			self._option_parser.print_help()
+			sys.exit(2)
+		elif self.options.devicetype == 2:
 		  return self.devices()
 		else:
 		  return self.datasource()	
@@ -91,7 +99,7 @@ class switchking(Plugin):
 			result.set_perf_data("Value", value,uom=unit,warn=self.options.warning,crit=self.options.critical)
 		else:
 			print "wrong type"
-			sys.exit()
+			sys.exit(2)
 		return result 
 
 
